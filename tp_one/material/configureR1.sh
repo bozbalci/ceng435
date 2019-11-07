@@ -1,3 +1,5 @@
+#!/bin/bash
+
 s=$(getent ahosts "s" | cut -d " " -f 1 | uniq)
 r2=$(getent ahosts "r2" | cut -d " " -f 1 | uniq)
 d=$(getent ahosts "d" | cut -d " " -f 1 | uniq)
