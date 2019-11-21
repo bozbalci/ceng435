@@ -10,12 +10,10 @@ r1_adapter=$(ip route get $r1 | grep -Po '(?<=(dev )).*(?= src| proto)')
 r3_adapter=$(ip route get $r3 | grep -Po '(?<=(dev )).*(?= src| proto)')
 d_adapter=$(ip route get $d | grep -Po '(?<=(dev )).*(?= src| proto)')
 
-
-
-s_random_delay=$(( ( RANDOM % 50 )  + 80 ))"ms"
-r1_random_delay=$(( ( RANDOM % 50 )  + 80 ))"ms"
-r3_random_delay=$(( ( RANDOM % 50 )  + 80 ))"ms"
-d_random_delay=$(( ( RANDOM % 50 )  + 80 ))"ms"
+s_random_delay=$(((RANDOM % 50) + 80))"ms"
+r1_random_delay=$(((RANDOM % 50) + 80))"ms"
+r3_random_delay=$(((RANDOM % 50) + 80))"ms"
+d_random_delay=$(((RANDOM % 50) + 80))"ms"
 
 sudo tc qdisc add dev $s_adapter root netem delay $s_random_delay
 sudo tc qdisc add dev $r1_adapter root netem delay $r1_random_delay
