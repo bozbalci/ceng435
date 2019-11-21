@@ -7,9 +7,9 @@
 |Narmin Aliyeva |  2177269|
 |Berk Ozbalci   |  2171791|
 
-## How to run the experiments
+## How to run the measurements (discovery part)
 
-In order to run the experiments, cd into `scripts` and then follow these steps:
+In order to run the measurements, cd into `discovery_scripts` and then follow these steps:
 
 ### SSH config
 
@@ -44,7 +44,6 @@ We bundled a script, `prepare_nodes.sh` that does a multitude of things:
 - It sends the measurement script to all nodes,
 - It removes any pre-existing link cost measurements,
 - (Optional) It removes network emulation delays and sets new ones,
-- (Optional) It adds network emulation delay according to presets. (experiments)
 
 #### Usage:
 
@@ -56,9 +55,7 @@ We bundled a script, `prepare_nodes.sh` that does a multitude of things:
     
     # Reset network emulation delays on r1 and r2.
     $ RESET_DELAYS=1 ./prepare_nodes.sh
-    
-    # Set experimental delays on s, r3 and d, using values from experiment 3.
-    $ SYNC=0 EXPERIMENT_NUMBER=3 ./prepare_nodes.sh
+
 
 ### Run measurements
 
