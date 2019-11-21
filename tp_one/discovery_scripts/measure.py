@@ -4,6 +4,8 @@ November 21st, 2019
 CENG435 - Data Comms. and Networking
 Term Project - Part One: UDP Based Socket Application, Delay Measurements, Topology, etc.
 
+This file contains scripts that are used for discovering link costs across the network.
+
 Authors:
     Narmin Aliyeva - 2177269
     Berk Ozbalci - 2171791

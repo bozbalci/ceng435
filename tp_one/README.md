@@ -101,3 +101,45 @@ The first line indicates that the RTT from `d` to `r1` is approx. 0.06 seconds.
 
 Using the numbers from this file, one can apply the Dijkstra algorithm to find the
 shortest path from `s` to `d`.
+
+## How to run experiments (end-to-end delay, routing, etc.)
+
+The experiment process is very similar to the measurement process in terms of user experience.
+
+There are two files that must be present at each node: `experiment.py` and `route.json`.
+
+`experiment.py` is the driver program that runs the socket application, and `route.json` is the
+file containing routing information. An example `route.json`:
+
+    ["s", "r3", "d"]
+
+`route.json` simply consists of a list of all host names along the path. You may edit this file
+if you would like to try out a different route. Make sure to collect the `end_to_end_costs.json`
+from the node that appears last in the list.
+
+### Time synchronization
+
+By default, the `prepare_nodes.sh` script bundled in this directory is also responsible for
+synchronizing time across all nodes. It runs the following commands on each node in order to
+synchronize time:
+
+  $ sudo systemctl stop ntp
+  $ sudo ntpdate 0.tr.pool.ntp.org
+
+### The flow
+
+Ensure that you have the correct SSH configuration as specified above. Then, cd into
+`experiment_scripts` and then run the following commands:
+
+    $ EXPERIMENT=1 ./prepare_nodes.sh  # runs the first experiment (20ms +- 5ms delay)
+    $ ./run_experiments.sh
+    
+    # Wait for the experiments to finish...
+    $ KILL=1 ./run_experiments.sh
+    $ ./fetch_results.sh
+    
+    # The experiment results can be read from ./experiments/results_summary
+
+The summary will include a list of end-to-end delays calculated from the end host, in our case, `d`.
+
+You may change the `EXPERIMENT` environment variable in order to set experiment presets.
