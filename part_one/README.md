@@ -143,3 +143,12 @@ Ensure that you have the correct SSH configuration as specified above. Then, cd 
 The summary will include a list of end-to-end delays calculated from the end host, in our case, `d`.
 
 You may change the `EXPERIMENT` environment variable in order to set experiment presets.
+
+### Stats extraction
+
+Run `stats.py` to dump stats related to the experiments. It will output the following files:
+
+- `stats.txt` containing means and confidence intervals for all experiments
+- `chart.png` containing a bar chart relating network emulation delay to end-to-end delay
+
+These outputs are used in the report.
