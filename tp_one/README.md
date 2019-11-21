@@ -1,8 +1,17 @@
-# How to run the experiments
+# CENG435 Term Project: Part One
 
-In order to run the experiments, follow these steps:
+## Group members
 
-## SSH config
+|Full name      |ID number|
+|---------------|---------|
+|Narmin Aliyeva |  2177269|
+|Berk Ozbalci   |  2171791|
+
+## How to run the experiments
+
+In order to run the experiments, cd into `scripts` and then follow these steps:
+
+### SSH config
 
 Add the following to your `~/.ssh/config`
 
@@ -28,7 +37,7 @@ Host network-s
     Port 29614
 ```
 
-## Prepare nodes
+### Prepare nodes
 
 We bundled a script, `prepare_nodes.sh` that does a multitude of things:
 
@@ -37,7 +46,7 @@ We bundled a script, `prepare_nodes.sh` that does a multitude of things:
 - (Optional) It removes network emulation delays and sets new ones,
 - (Optional) It adds network emulation delay according to presets. (experiments)
 
-Usage:
+#### Usage:
 
     # Just sync the files and exit.
     $ ./prepare_nodes.sh
@@ -51,7 +60,7 @@ Usage:
     # Set experimental delays on s, r3 and d, using values from experiment 3.
     $ SYNC=0 EXPERIMENT_NUMBER=3 ./prepare_nodes.sh
 
-## Run measurements
+### Run measurements
 
 In order to run the measurements, run:
 
@@ -68,7 +77,7 @@ When all measurements are done, run:
 in order to kill all tmux sessions across all nodes. This will terminate the server
 processes properly.
 
-## Fetch results
+### Fetch results
 
 After the above steps are completed, run
 
@@ -92,3 +101,6 @@ results to a file named `results_summary`. It will look like this:
 ```
 
 The first line indicates that the RTT from `d` to `r1` is approx. 0.06 seconds.
+
+Using the numbers from this file, one can apply the Dijkstra algorithm to find the
+shortest path from `s` to `d`.
