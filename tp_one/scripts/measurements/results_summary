@@ -1,0 +1,47 @@
+==> measurements/network-d/link_costs_r1.txt <==
+0.0627374186515808
+
+==> measurements/network-d/link_costs_r2.txt <==
+0.09173182249069214
+
+==> measurements/network-d/link_costs_r3.txt <==
+0.0007220737934112549
+
+==> measurements/network-r1/link_costs_d.txt <==
+0.06273332428932189
+
+==> measurements/network-r1/link_costs_r2.txt <==
+0.18476141905784607
+
+==> measurements/network-r1/link_costs_s.txt <==
+0.0756934220790863
+
+==> measurements/network-r2/link_costs_d.txt <==
+0.09173446130752563
+
+==> measurements/network-r2/link_costs_r1.txt <==
+0.1847433261871338
+
+==> measurements/network-r2/link_costs_r3.txt <==
+0.10271593737602235
+
+==> measurements/network-r2/link_costs_s.txt <==
+0.08869342613220214
+
+==> measurements/network-r3/link_costs_d.txt <==
+0.0007896888256072998
+
+==> measurements/network-r3/link_costs_r2.txt <==
+0.10278460216522217
+
+==> measurements/network-r3/link_costs_s.txt <==
+0.0007044844627380371
+
+==> measurements/network-s/link_costs_r1.txt <==
+0.07566953325271607
+
+==> measurements/network-s/link_costs_r2.txt <==
+0.08873975849151611
+
+==> measurements/network-s/link_costs_r3.txt <==
+0.0007152118682861328

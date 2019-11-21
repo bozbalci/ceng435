@@ -26,7 +26,7 @@ do
   popd
 done
 
-tail measurements/**/*.txt > results_summary
+tail measurements/**/*.txt > measurements/results_summary
 
 end_time=`date +%s`
 total_running_time=$((end_time - start_time))
