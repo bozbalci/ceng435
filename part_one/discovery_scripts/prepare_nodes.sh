@@ -63,21 +63,6 @@ case "$SYNC" in
   ;;
 esac
 
-case "$EXPERIMENT_NUMBER" in
-"1")
-  echo "Configuring experiment 1..."
-  ;;
-"2")
-  echo "Configuring experiment 2..."
-  ;;
-"3")
-  echo "Configuring experiment 3..."
-  ;;
-*)
-  echo "Skipping experiment configuration..."
-  ;;
-esac
-
 end_time=`date +%s`
 total_running_time=$((end_time - start_time))
 echo "Nodes have been prepared in $total_running_time seconds"
