@@ -70,26 +70,33 @@ machines at the time of starting the assignment. In addition, both scripts are h
 shell scripts in order to facilitate setting up nodes, links and retrieving the experiment results.
 
 
-\subsubsection{Discovery Scripts}
+\subsection{Discovery Scripts}
 The discovery script creates a \textit{messaging pair} at each node, for each of its
 neighboring nodes. The messaging pair is a pair of UDP server and UDP client, and each of them
 run in a separate thread. This means that for a node having three neighbors, it will have six
 threads, three of them which are UDP servers, and the remaining UDP clients.
+This allows the nodes to send and receive multiple messages concurrently,
+thereby inducing simultaneous messaging between all neighboring pairs.
 
 The messaging protocol is very straightforward: each message contains a \textit{sender ID}, which is
 a unique identifier of the node that the message originates from; and an \textit{index}, which is the
 sequence index at which the UDP client has sent the message.
 
-The sender ID is used to decide whether an incoming message originates from the same messaging pair,
+The sender ID is set by the UDP client upon generation of a message and used by the UDP server
+to decide whether an incoming message originates from the client of the same messaging pair,
 i.e. if the sender ID is same as the current node's sender ID, then it's a round-trip and we must
-calculate RTT based on this message; otherwise, it originates from another node and therefore it
-must be echoed back.
+calculate RTT based on this message; otherwise, it originates from another node and therefore the server echoes it back
+(without making any changes to the message content).
+
+When the server has to echo these messages to the neighboring node, it does not communicate back to the client, instead it
+sends them to the server of the same messaging pair at that node. In this way, we ensure that the client is able to generate and
+send messages back-to-back, without having to wait for the previously sent message to return from the server.
 
 In our scheme, every node constructs a messaging pair with all of its neighbors. Therefore, a total
 of 16 link costs have been measured. For each measurement, a total of 1,000 messages were sent,
 and the results were averaged.
 
-\subsubsection{Experiment Scripts}
+\subsection{Experiment Scripts}
 The experiment script takes a routing information file as input, which is a simple linked list of
 nodes that the end-to-end delay experiment will be conducted over. For example,
 
@@ -106,13 +113,13 @@ will set up sockets at each node in the following fashion:
     \item \textbf{r3} calculates the end-to-end delay.
 \end{itemize}
 
-When the experiment script is run with the above routing input at node \textbf{r2}, it will find
-that its name does not appear on the routing list, and therefore exits immediately.
+When the experiment script is run with the above routing input at node \textbf{d}, it will find
+that its name does not appear on the routing list, and therefore exit immediately.
 
 The experiment scripts use a different message structure from the measurement scripts. The only
 content is the UNIX timestamp with millisecond precision, represented as a floating point number.
-When this message is received at the final node, the receiver node calculates the timestamp and
-computes the difference between the received message's timestamp and its own timestamp. This
+When this message is received at the final node, the receiver node obtains the current timestamp and
+computes the difference between this timestamp and the received message's timestamp. This
 difference is the \textit{end-to-end delay}.
 
 For this scheme to work, both the initial node and the final node must be time-synchronized. We
@@ -122,7 +129,7 @@ accomplished this by using an external NTP server:
 # ntpdate 0.tr.pool.ntp.org
 \end{lstlisting}
 
-\subsubsection{Common Implementation Details}
+\subsection{Implementation Details Common to Both Parts}
 \begin{itemize}
     \item Network emulation delay is achieved by using the \textbf{tc} commands.
     \item All nodes receive the network topology in an adjacency list format, and compute their neighbors dynamically.
@@ -133,6 +140,48 @@ accomplished this by using an external NTP server:
         \item Each server host listens to packages from a client host on port $B + C$, where $B$ is the base port, and $C$ is the sender ID of the client host.
     \end{itemize}
 \end{itemize}
+
+\textbf{Note:} We kept the routing information stored in the input file simple, since we are only interested in a single path
+from \textbf{s} to \textbf{d} in the first part of this project. However, if multiple nodes had to decide which route to
+take on message arrival, there would be a need for multiple files containing routing tables for each node. Additionally,
+we would have to include source and destination addresses as parts of a message.
+
+\subsection{Miscellenea}
+This section contains more specific implementation details on various parts of the project.
+
+\subsubsection{The Nature of UDP, and Ensuring the Right Number of Messages}
+Since UDP does not guarantee that all packets that are sent will arrive at the destination host,
+we didn't use a simple counter that attempts to send a message exactly $N$ times, where $N$ is the
+size of the experiment currently running.
+
+In the discovery part, each messaging pair maintains the number of packets that have successfully
+returned from a round-trip. The clients keep on sending new messages until this number reaches $N$,
+the experiment size. Since both the server and the client threads are reading and writing to this
+variable, we used mutexes to prevent race conditions and ensure that no lack or excess of packets
+occur while calculating the average RTT.
+
+In the experiment part, we apply a similar logic to the final node, which causes all the packets
+sent from the penultimate node to be dropped, thereby restricting the data set to the exact count
+of samples requested.
+
+\subsubsection{End-to-End Delay vs. Round-Trip Time}
+Our computation of the end-to-end delay and round-trip time differs in their implementation detail.
+
+RTTs are computed by taking the difference of the timestamps at each packet event (being sent or
+received) at the same node. That is, if node A sends a packet to node B at time $t_0$, and node
+B sends back the same message to node A at time $t_1$, the round-trip time will be $t_1 - t_0$.
+
+But end-to-end delays are computed by taking the difference between timestamps at different nodes.
+This means that, if node A sends a packet at its local time $t_0$, and node B receives that packet
+at its local time $t'_1$, the end-to-end delay will be measured as
+
+$$
+t'_1 - t_0 + \delta_{s}
+$$
+
+where $\delta_{s}$ is the synchronization offset, which is the time difference between nodes A
+and B. To produce a more accurate end-to-end delay measurement, $\delta_{s}$ must be as small as
+possible. We used NTP as a synchronization protocol to reduce the time difference between nodes.
 
 \section{Network Topology and RTTs}
 The measurement script was ran on all nodes, but we have obtained the RTTs shown in Fig. \ref{fig:links}
@@ -162,8 +211,8 @@ from the inner nodes only (\textbf{r1}, \textbf{r2} and \textbf{r3}).
 \end{figure}
 
 \section{Determining the Shortest Path using Dijkstra's Algorithm}
-
-The following table is constructed for calculating the shortest path from \textbf{s} to
+For the purpose of the experiment to be carried out in the next step, we were only interested in the shortest path between
+\textbf{s} and \textbf{d}. However, for the sake of completeness, we constructed the table for finding the shortest path from \textbf{s} to
 any other node in the network. The costs are expressed as RTTs in milliseconds.
 
 \begin{table}[h]
@@ -186,19 +235,22 @@ r2 & & & \mathboxed{88.69_{s}} & & \\
 \end{tabular}
 \end{table}
 
-First, we start by exploring the node \textbf{s}. It has three direct neighbors, and we add the
-costs of those links to the first row. For any other node, the weight is set to infinity. We then
+First, we start by exploring node \textbf{s}. It has three direct neighbors, and we add the
+costs of those links to the first row. Since there is no direct link to \textbf{d}, the weight is set to infinity for
+this node. We then
 proceed to the next step by choosing to follow the link with the lowest cost, arriving at
-\textbf{r3}. For any node reachable from \textbf{r3}, we check whether the cost from \textbf{r3} is
-smaller than the minimum cost that is already found (if it exists). If it is smaller, we take that
-step, adding that link's cost to the prior calculation in order to find the total cost of reaching
-the node from the starting node. Otherwise, we keep the previous result as is.
+\textbf{r3}. For any node reachable from \textbf{r3} that is not marked as explored (boxed), we calculate the cost of
+reaching that node through \textbf{r3}, by adding the cost of arriving
+at \textbf{r3} from \textbf{s} to the cost of the link with that node. If this sum is
+smaller than the minimum cost that is already found (if it exists) for that node, we take that step, updating the node's
+minimum cost and subscript. Otherwise, we keep the previous result as is.
 
 The subscripts at each table cell indicate the node that was used in order to reach at the number
 shown in the table cell. That is, $.70_{s}$ indicates that the node in question can be reached
 from \textbf{s}, and the total cost of doing so is $0.70$.
 
-As can be seen from the table, the shortest path between \textbf{s} and \textbf{d} is
+To find the shortest path for a node using the constructed table, we trace the subscripts starting from that node up to
+node \textbf{s}. The shortest path between \textbf{s} and \textbf{d} is then found to be
 
 \begin{lstlisting}
 ["s", "r3", "d"]
@@ -227,6 +279,13 @@ To obtain a more accurate result, we've conducted the end-to-end delay transmiss
 at each experiment. In order to construct a 95\% confidence interval, we needed at least 30 samples,
 but since we've automated most of the script fairly well, we confidently increased the test size.
 
+\begin{figure}
+    \center
+    \includegraphics[width=\columnwidth]{images/chart}
+    \caption{Network emulation delay vs.\ end-to-end delay}
+    \label{fig:graph}
+\end{figure}
+
 The experimental data is provided in the below table. CI denotes "Confidence Interval".
 
 \begin{table}[h]
@@ -252,50 +311,5 @@ delay applied to each node, because there are only two links in the path and the
 same amount of delay associated with them.
 
 Upon running the experiments, we have met our initial expectations with very close results.
-
-\begin{figure}
-    \center
-    \includegraphics[width=\columnwidth]{images/chart}
-    \caption{Network emulation delay vs.\ end-to-end delay}
-    \label{fig:graph}
-\end{figure}
-
-
-\section{Further Implementation Details}
-This section contains more specific implementation details on various parts of the project.
-
-\subsection{The Nature of UDP: Ensuring the Right Number of Messages}
-Since UDP does not guarantee that all packets that are sent will arrive at the destination host,
-we didn't use a simple counter that attempts to send a message exactly $N$ times, where $N$ is the
-size of the experiment currently running.
-
-In the discovery part, each messaging pair maintains the number of packets that have successfully
-returned from a round-trip. The clients keep on sending new messages until this number reaches $N$,
-the experiment size. Since both the server and the client threads are reading and writing to this
-variable, we used mutexes to prevent race conditions and ensure that no lack or excess of packets
-occur while calculating the average RTT.
-
-In the experiment part, we apply a similar logic to the final node, which causes all the packets
-sent from the penultimate node to be dropped, thereby restricting the data set to the exact count
-of samples requested.
-
-\subsection{End-to-End Delay vs. Round-Trip Time}
-Our computation of the end-to-end delay and round-trip time differs in their implementation detail.
-
-RTTs are computed by taking the difference of the timestamps at each packet event (being sent or
-received) at the same node. That is, if node A sends a packet to node B at time $t_0$, and node
-B sends back the same message to node A at time $t_1$, the round-trip time will be $t_1 - t_0$.
-
-But end-to-end delays are computed by taking the difference between timestamps at different nodes.
-This means that, if node A sends a packet at its local time $t_0$, and node B receives that packet
-at its local time $t'_1$, the end-to-end delay will be measured as
-
-$$
-t'_1 - t_0 + \delta_{s}
-$$
-
-where $\delta_{s}$ is the synchronization offset, which is the time difference between nodes A
-and B. To produce a more accurate end-to-end delay measurement, $\delta_{s}$ must be as small as
-possible. We used NTP as a synchronization protocol to reduce the time difference between nodes.
 
 \end{document}
