@@ -21,7 +21,6 @@ class Router:
         self.destination_host = socket.gethostbyname(constants.DESTINATION)
         self.destination_address = self.destination_host, 10004
         self.sock_in = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock_out = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.forwarding_port = constants.BASE_PORT + constants.OWN_SENDER_ID
 
     def run(self):
@@ -40,4 +39,4 @@ class Router:
                 raise Exception("Router cannot receive packets from other nodes")
 
             print(f"from: {client_address}, to: {forwarding_address}, data: {len(data_in)} bytes")
-            self.sock_out.sendto(data_in, forwarding_address)
+            self.sock_in.sendto(data_in, forwarding_address)
