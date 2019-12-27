@@ -78,8 +78,25 @@ copy of the module, only differing in the way they run the modules, i.e. running
 
 \subsection{Protocol Design}
 We used the Go-Back-N ARQ\footnote{Automatic repeat request} protocol for achieving reliable data transfer.
+This allows us to implement the protocol in a pipelined fashion.
 
-% TODO Maybe explain GBN here?
+\subsubsection{Go-Back N ARQ}
+Go-Back-N is employed as the automatic repeat request (ARQ) mechanism. To elaborate, the
+receiver side does not hold any other information besides the expected sequence number of the next
+packet, and it sends a control message back to the sender cumulatively ACKing all the packets
+up to the sequence number indicated in the ACK message. And the acknowledged packet is always
+the one with the highest sequence number that has been received in-order and ungarbled. The
+sender, however does store up to $N$ packets in a buffer, where $N$ is the window size. Although
+a dynamic window size adapting to factors such as loss rate could have yielded better results, in this
+project it sufficed to set it to the value of 4, by trial and error. Whenever the window is
+full, the sender has to wait. All the packets in the window are retransmitted on the occasion that a
+timeout occurs, which happens 18ms after the first packet in the buffer was transmitted.
+
+The number $18ms$ was decided by considering the roundtrip time (RTT) between the source and
+destination nodes. Since all links employ a 3ms emulated delay, there is at least 12ms of delay
+between those nodes. There is also some processing done on each node that could cause further
+delays, so we added a 50\% margin to the obtained value, to get 18ms.
+
 
 \subsubsection{Packet Structure}
 
@@ -130,7 +147,14 @@ sender will have the chance to consider using a different router.
 There is a port number convention (the same used in the Term Project part one) that helped us in
 conceptualizing connections and links.
 
-% TODO Explain this as well?
+The routers accept connections on port $10000 + K$ where $K$ is the number of the router, i.e.
+it is $2$ for \textbf{r2}. For the source node, $K = 0$ and for the destination node, $K = 4$.
+
+\subsubsection{Constants}
+
+The reader is encouraged to try out different scenarios by changing constants defined in
+\textbf{protocol/constants.py}. Things such as window size, timeout, packet size, etc. are
+defined in there.
 
 \section{Experiment Results}
 
@@ -253,5 +277,30 @@ increase in the time taken to transmit the entire file. In real life application
 tolerable loss may depend on the type of the application. Since our goal in this experiment was to
 deliver the file to the other end without any loss of integrity, we can say that even 38\% loss is
 tolerable (assuming integrity is more important to us than the rate of transmission.)
+
+\subsection{Experiment 2}
+
+Unfortunately, we could not implement the multihoming protocol before the deadline. So there is no
+experimental data or analysis for the multihomed protocol, although we can say a little about how
+it would perform, given that it were implemented.
+
+By using disjoint links, we increase the chance that a packet will actually get transmitted without
+getting dropped, therefore there will be less re-transmissions, and the overall file transfer time
+will be reduced.
+
+There could be two approaches to implementing a multihomed protocol:
+
+\begin{itemize}
+    \item \textbf{Splitting segments.} Over one link, the even numbered packets could be sent, and
+    over the other, odd numbered packets could be sent; and the destination node would assemble them
+    as they are received. This would decrease the transfer time by exploiting disjoint links.
+    \item \textbf{Introducing redundancy.} The same packets could be transmitted through multiple
+    links to increase link utilization, thereby maximizing the use of resources. It is more like a
+    brute-force approach, in that we trust that if one link drops the packets, the other still has
+    a chance, therefore improving reliability.
+\end{itemize}
+
+We started implementing both separately but neither implementation was completely finished. The
+unfinished code is still available in the protocol directory.
 
 \end{document}
